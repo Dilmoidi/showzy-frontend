@@ -292,7 +292,7 @@ export default function BookingSummary() {
           } 
         });
       } else {
-        setError(data.error || 'Failed to lock seats or complete configuration.');
+        setError(data.error || data.detail || 'Failed to lock seats or complete configuration.');
       }
     } catch (e) {
       setError('Connection timeout establishing seat matrix lock.');
