@@ -1210,14 +1210,15 @@ function StripeCardFormInner({ booking, cardName, setCardName, saveCard, setSave
           ) : (
             <input
               type="text"
-              placeholder="4242 4242 4242 4242 (Stripe Test)"
-              disabled
+              defaultValue="4242 4242 4242 4242"
+              placeholder="4242 4242 4242 4242"
+              maxLength={19}
               style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px', color: '#ffffff', background: 'transparent', boxSizing: 'border-box' }}
             />
           )}
         </div>
         {booking && booking.is_demo && (
-          <p style={{ fontSize: '11px', color: '#00ff66', margin: '4px 0 0 0' }}>🧪 Demo mode — use test card <strong>4242 4242 4242 4242</strong></p>
+          <p style={{ fontSize: '11px', color: '#00ff66', margin: '4px 0 0 0' }}> Demo mode &nbsp; use test card <strong>4242 4242 4242 4242</strong></p>
         )}
       </div>
 
@@ -1229,7 +1230,7 @@ function StripeCardFormInner({ booking, cardName, setCardName, saveCard, setSave
             {booking && !booking.is_demo ? (
               <CardExpiryElement options={STRIPE_ELEMENT_STYLE} />
             ) : (
-              <input type="text" placeholder="12 / 29" disabled style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px', color: '#ffffff', background: 'transparent', boxSizing: 'border-box' }} />
+              <input type="text" defaultValue="12 / 29" placeholder="MM / YY" maxLength={7} style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px', color: '#ffffff', background: 'transparent', boxSizing: 'border-box' }} />
             )}
           </div>
         </div>
@@ -1239,7 +1240,7 @@ function StripeCardFormInner({ booking, cardName, setCardName, saveCard, setSave
             {booking && !booking.is_demo ? (
               <CardCvcElement options={STRIPE_ELEMENT_STYLE} />
             ) : (
-              <input type="password" placeholder="•••" disabled style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px', color: '#ffffff', background: 'transparent', boxSizing: 'border-box' }} />
+              <input type="text" defaultValue="123" placeholder="CVC" maxLength={4} style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px', color: '#ffffff', background: 'transparent', boxSizing: 'border-box' }} />
             )}
           </div>
         </div>
