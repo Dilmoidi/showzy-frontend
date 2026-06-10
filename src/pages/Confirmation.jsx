@@ -77,8 +77,8 @@ export default function Confirmation() {
 
   const show = booking.show_details || {};
   
-  // Use backend generated QR base64 image or fall back to external generator
-  const qrCodeUrl = booking.qr_image || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=00f2fe&bgcolor=06070d&data=${encodeURIComponent(JSON.stringify({ booking_id: booking.booking_id, token: booking.qr_token }))}`;
+  const qrFallbackPayload = `${window.location.origin}/ticket/${booking.booking_id}?token=${booking.qr_token}`;
+  const qrCodeUrl = booking.qr_image || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=00f2fe&bgcolor=06070d&data=${encodeURIComponent(qrFallbackPayload)}`;
 
   const handleDownloadPDF = () => {
     window.open(`${API_BASE}/download-ticket/${booking.booking_id || booking.id}/`, '_blank');

@@ -47,18 +47,47 @@ export default function AdminScanTicket() {
     }
   };
 
-  const onScanSuccess = async (decodedText) => {
-    await stopScanner(); // Stop immediately so we don't scan twice
+  const parseDecodedText = (text) => {
+    const trimmed = text.trim();
+    
+    // Check if it's a URL (either absolute or relative path containing /ticket/)
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.includes('/ticket/')) {
+      try {
+        let urlString = trimmed;
+        if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+          urlString = window.location.origin + (trimmed.startsWith('/') ? '' : '/') + trimmed;
+        }
+        
+        const url = new URL(urlString);
+        const pathParts = url.pathname.split('/');
+        const ticketIdx = pathParts.indexOf('ticket');
+        
+        let bookingId = '';
+        if (ticketIdx !== -1 && ticketIdx + 1 < pathParts.length) {
+          bookingId = pathParts[ticketIdx + 1];
+        } else {
+          bookingId = pathParts[pathParts.length - 1];
+        }
+        
+        const token = url.searchParams.get('token') || '';
+        return { booking_id: bookingId, token };
+      } catch (err) {
+        console.error("Failed to parse URL:", err);
+      }
+    }
     
     // Attempt to parse JSON payload
-    let payload;
     try {
-      payload = JSON.parse(decodedText);
+      return JSON.parse(trimmed);
     } catch (e) {
-      // Maybe it's just raw text, let backend handle if it's not JSON
-      payload = { booking_id: decodedText, token: '' };
+      // Fall back to raw text/UUID
+      return { booking_id: trimmed, token: '' };
     }
+  };
 
+  const onScanSuccess = async (decodedText) => {
+    await stopScanner(); // Stop immediately so we don't scan twice
+    const payload = parseDecodedText(decodedText);
     verifyTicket(payload);
   };
 
@@ -118,13 +147,7 @@ export default function AdminScanTicket() {
     const trimmed = manualBookingId.trim();
     if (!trimmed) return;
     setManualMode(false);
-    // Try to extract booking_id and token from JSON, or use raw ID
-    let payload;
-    try {
-      payload = JSON.parse(trimmed);
-    } catch {
-      payload = { booking_id: trimmed, token: '' };
-    }
+    const payload = parseDecodedText(trimmed);
     verifyTicket(payload);
   };
 

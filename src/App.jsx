@@ -17,6 +17,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import TheatreAdminLogin from './pages/TheatreAdminLogin';
 import Profile from './pages/Profile';
+import PublicTicket from './pages/PublicTicket';
 import { useParams } from 'react-router-dom';
 
 // New Theatre Admin imports
@@ -58,7 +59,9 @@ function AppContent({ searchVal, setSearchVal }) {
           <Route path="/shows/:showId/group/:sessionToken" element={<GroupSeatSelection />} />
           <Route path="/shows/:showId/food" element={<SelectFood />} />
           <Route path="/bookings/:bookingId/pay" element={<BookingSummaryWrapper />} />
-          <Route path="/bookings/:bookingId/success" element={<Confirmation />} />
+          <Route path="/bookings/checkout/pay" element={<BookingSummaryWrapper />} />
+           <Route path="/bookings/:bookingId/success" element={<Confirmation />} />
+          <Route path="/ticket/:bookingId" element={<PublicTicket />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/login" element={<TheatreAdminLogin />} />
