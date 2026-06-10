@@ -1,0 +1,2223 @@
+
+> frontend@0.0.0 dev
+> vite
+
+Port 5173 is in use, trying another one...
+
+  VITE v5.4.11  ready in 864 ms
+
+  ➜  Local:   http://localhost:5174/
+  ➜  Network: use --host to expose
+[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+2042|    }
+2043|  }
+2044|  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2045|  :root {
+2046|    font-family: var(--font-sans);
+6:26:49 pm [vite] hmr update /src/pages/Checkout.jsx, /src/index.css
+6:26:49 pm [vite] hmr update /src/pages/Checkout.jsx, /src/index.css
+[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+2063|    }
+2064|  }
+2065|  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2066|  :root {
+2067|    font-family: var(--font-sans);
+7:28:09 pm [vite] hmr update /src/pages/SuperAdminDashboard.jsx, /src/index.css
+[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+2096|    }
+2097|  }
+2098|  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2099|  :root {
+2100|    font-family: var(--font-sans);
+7:28:43 pm [vite] hmr update /src/pages/TheatreAdminDashboard.jsx, /src/index.css
+[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+2240|    }
+2241|  }
+2242|  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2243|  :root {
+2244|    font-family: var(--font-sans);
+
+
+## Verification Plan
+
+### Manual Verification
+1. Log in to Showzy as `superadmin` / `adminpass`.
+2. Verify that the dashboard is rendered in the light-mode SaaS theme matching the uploaded screenshot.
+3. Check that the sidebar badges correctly show the number of pending theatres and movies.
+4. Verify that the Monthly Bookings SVG chart, Most Watched progress bars, and Recent Activity tables render correctly.
+5. Verify that clicking on **Theatres**, **Users**, **Movies**, **Revenue**, or **Rewards & Coupons** opens the corresponding sections properly styled in the new light theme.
+
+  const [scanningSimOpen, setScanningSimOpen] = useState(false);
+
+  // Customer Alert
+  const [alertShowId, setAlertShowId] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
+  // Booking logs search/filter
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('ALL');
+
+  // System parameters
+  const [sysParams, setSysParams] = useState({ default_commission: 10.0, convenience_fee: 30.0, smtp_enabled: true });
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Token ${token}`
+  };
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!token) {
+      if (!token) {
+        navigate('/login');
+      } else if (user) {
+        if (user.role === 'USER') {
+          navigate('/');
+        } else if (user.role === 'SUPERADMIN') {
+          if (consoleMode !== 'superadmin') {
+            setConsoleMode('superadmin');
+            setActiveTab('metrics');
+          }
+        } else if (user.role === 'THEATRE_ADMIN') {
+          if (consoleMode !== 'cinema') {
+            setConsoleMode('cinema');
+            setActiveTab('cinema_metrics');
+          }
+        }
+      }
+    }
+  }, [token, user, authLoading, consoleMode]);
+
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'white' }}>
+        <p>Loading Console Credentials...</p>
+      </div>
+    );
+  }
+
+  // Load all initial data depending on consoleMode
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // 1. Stats and Movies are shared
+      const statsRes = await fetch(`${API_BASE}/admin/stats/`, { headers });
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      const moviesRes = await fetch(`${API_BASE}/movies/`);
+      const statsRes = await fetch(`${API_BASE}/admin/stats/`, { headers });
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+
+      const moviesRes = await fetch(`${API_BASE}/movies/`);
+      if (moviesRes.ok) {
+        const moviesData = await moviesRes.json();
+        setMovies(moviesData);
+        if (moviesData.length > 0 && !newShow.movie_id) {
+          setNewShow(prev => ({ ...prev, movie_id: moviesData[0].id }));
+        }
+      }
+
+      // 2. Cinemas
+      const cinemasRes = await fetch(`${API_BASE}/admin/cinemas/`, { headers });
+      if (cinemasRes.ok) {
+        const cinemasData = await cinemasRes.json();
+        setCinemas(cinemasData);
+        if (cinemasData.length > 0) {
+          setNewScreen(prev => ({ ...prev, cinema_id: cinemasData[0].id }));
+          setNewOffer(prev => ({ ...prev, cinema_id: cinemasData[0].id }));
+          if (activeTab === 'screens' && !selectedScreenId) {
+            fetchScreens(cinemasData[0].id);
+          }
+
+
+
+
+
+
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState('metrics');
+
+  useEffect(() => {
+    if (token) {
+      loadDashboardData();
+    }
+  }, [token, consoleMode, activeTab]);
+
+  const showMsg = (text, type = 'success') => {
+    setMsg({ text, type });
+    setTimeout(() => setMsg({ text: '', type: '' }), 4000);
+      const response = await fetch(`${API_BASE}/admin/screens/?cinema=${cinemaId}`, { headers });
+      if (response.ok) {
+        const screensData = await response.json();
+        setScreens(screensData);
+        if (screensData.length > 0 && !newShow.screen_id) {
+          setNewShow(prev => ({ ...prev, screen_id: screensData[0].id }));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+      at run.next (<anonymous>)
+      at transform (C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\@babel\core\lib\transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:261:32)
+      at C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:223:11)
+      at C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:189:28
+      at C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\@babel\core\lib\gensync-utils\async.js:67:7
+      at C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:113:33
+      at step (C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:287:14)
+      at C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:273:13
+      at async.call.result.err.err (C:\Users\dilmo\OneDrive\WAC PROJECTS\frontend\node_modules\gensync\index.js:223:11)
+7:12:27 pm [vite] hmr update /src/pages/BookingSummary.jsx
+7:13:40 pm [vite] hmr update /src/pages/BookingSummary.jsx
+7:40:59 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+7:54:40 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+7:54:47 pm [vite] hmr update /src/components/Header.jsx
+9:46:59 pm [vite] hmr update /src/pages/Home.jsx
+9:48:26 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+9:48:44 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+9:48:56 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+9:49:09 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+9:51:26 pm [vite] hmr update /src/pages/AdminDashboard.jsx
+
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/admin/cinemas/create/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(newCinema)
+      });
+      if (res.ok) {
+        showMsg(`Cinema "${newCinema.name}" added successfully to registry.`);
+        setNewCinema({ name: '', address: '', city_name: 'Delhi' });
+        setShowAddCinema(false);
+        loadDashboardData();
+      } else {
+        const err = await res.json();
+        showMsg(err.error || 'Failed to add cinema.', 'error');
+      }
+    } catch (err) {
+      showMsg('Network error registering cinema.', 'error');
+    }
+  };
+
+  const handleUserBlock = async (userId, blockBool) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/`, {
+        method: 'POST',
+        headers,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        const users = await res.json();
+        const userObj = users.find(u => u.id === userId);
+        const bookingsRes = await fetch(`${API_BASE}/cinema/bookings/`, { headers });
+        if (bookingsRes.ok) {
+          const bookings = await bookingsRes.json();
+          const filtered = bookings.filter(b => b.customer_username === userObj.username);
+          setSelectedUserBookings(filtered);
+          setShowUserBookingsModal(true);
+        }
+      }
+    } catch (e) {
+      showMsg('Error fetching booking history.', 'error');
+    }
+
+  const handleUserBlock = async (userId, blockBool) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ user_id: userId, block: blockBool })
+      });
+      if (res.ok) {
+        showMsg(blockBool ? 'User accounts deactivated.' : 'User account reactivated.');
+        loadDashboardData();
+        if (selectedUser && selectedUser.id === userId) {
+          setSelectedUser(prev => ({ ...prev, is_active: !blockBool }));
+        }
+      }
+    } catch (e) {
+      showMsg('Failed to update account status.', 'error');
+      showMsg('Failed to update account status.', 'error');
+    }
+  };
+
+  const viewUserHistory = async (u) => {
+    setSelectedUser(u);
+    try {
+      const bookingsRes = await fetch(`${API_BASE}/cinema/bookings/`, { headers });
+      if (bookingsRes.ok) {
+        const allBookings = await bookingsRes.json();
+        const filtered = allBookings.filter(b => b.customer_username === u.username);
+        setUserBookings(filtered);
+      }
+    } catch (e) {
+      setUserBookings([]);
+    }
+  };
+
+  const handleCreateCoupon = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/admin/coupons/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(newCoupon)
+      });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-cyber-cyan font-cyber">Discount Value (INR)</label>
+                  <input
+                    type="number"
+                    required
+                    value={newCoupon.discount_amount}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, discount_amount: e.target.value })}
+                    className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2.5 px-3 text-xs outline-none text-white"
+                    placeholder="50"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-cyber-cyan font-cyber">Expiry Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={newCoupon.expiry_date}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, expiry_date: e.target.value })}
+                    className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2.5 px-3 text-xs outline-none text-white"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="cyber-btn-cyan px-6 py-2.5 rounded-xl text-xs font-bold font-cyber uppercase tracking-wider cursor-pointer"
+              >
+                Create Coupon Code
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SuperAdminDashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const filteredBookings = bookingsList.filter(b => {
+    const searchMatch = b.customer_username.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+                        b.movie_title.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+                        b.id.toString().includes(bookingSearch);
+    const statusMatch = bookingStatusFilter === 'ALL' || b.status === bookingStatusFilter;
+    return searchMatch && statusMatch;
+  });
+
+  const renderVisualLayout = () => {
+    if (!selectedScreenId) return null;
+    const screen = screens.find(s => s.id === parseInt(selectedScreenId));
+    if (!screen) return null;
+
+    const rows = ['VIP', 'A', 'B', 'C', 'D', 'E'];
+    const cols = Array.from({ length: 8 }, (_, i) => i + 1);
+
+    return (
+      <div className="space-y-4 p-5 bg-dark-bg/60 border border-dark-border rounded-2xl">
+        <div className="text-center font-cyber font-black text-xs text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
+          SEAT LAYOUT MAP: {screen.name.toUpperCase()}
+        </div>
+        <div className="w-3/4 mx-auto h-2 bg-gradient-to-r from-cyber-cyan/40 via-cyber-cyan to-cyber-cyan/40 rounded-full shadow-[0_0_10px_rgba(0,242,254,0.4)] text-[8px] text-center text-cyber-cyan tracking-widest uppercase font-cyber pt-3 mb-8">
+          SCREEN DIRECTION
+        </div>
+        <div className="flex flex-col gap-2.5 items-center">
+          {rows.map(row => (
+            <div key={row} className="flex gap-2 items-center">
+              <span className="w-6 text-[10px] font-cyber font-bold text-gray-500 text-right pr-2">{row}</span>
+              {cols.map(col => {
+                let colorClass = "bg-blue-500/10 border-blue-500/30 text-blue-400";
+                if (row === 'VIP') colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
+        </div>
+
+        {/* Unified switcher tab button */}
+        <div className="flex bg-dark-bg/60 border border-dark-border rounded-xl p-1 gap-1">
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        showMsg('Offer deleted successfully.');
+        loadDashboardData();
+      }
+    } catch (e) {
+      showMsg('Failed to delete offer.', 'error');
+    }
+  };
+
+  const handleValidateTicket = async (e) => {
+    e.preventDefault();
+    setValidationError('');
+    setValidationResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/cinema/validate-ticket/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ token: validationToken })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setValidationResult(data.booking_details);
+        showMsg('Check-in granted!');
+      } else {
+        setValidationError(data.error || 'Check-in denied.');
+      }
+    } catch (err) {
+      setValidationError('Failed to validate check-in.');
+    }
+  };
+
+  const handleSendAlert = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE}/cinema/notify-customers/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ show_id: parseInt(alertShowId), message: alertMessage })
+      });
+      if (res.ok) {
+        showMsg('Broadast dispatched to ticket holders!');
+        setAlertShowId('');
+        setAlertMessage('');
+      }
+    } catch (e) {
+      showMsg('Failed to send alerts.', 'error');
+    }
+  };
+
+  const triggerCSVExport = () => {
+    let csv = "data:text/csv;charset=utf-8,";
+    if (activeTab === 'bookings') {
+      csv += "ID,Movie,Cinema,Screen,Customer,Seats,Showtime,Paid Amount,Status\n";
+      filteredBookings.forEach(b => {
+        csv += `${b.id},"${b.movie_title}","${b.theatre_name}","${b.screen_name}",${b.customer_username},"${b.seats}","${b.showtime}",${b.final_amount},${b.status}\n`;
+      });
+    } else {
+      csv += "ID,Cinema,Address\n";
+      cinemas.forEach(c => {
+        csv += `${c.id},"${c.name}","${c.address}"\n`;
+      });
+    }
+    const uri = encodeURI(csv);
+    const link = document.createElement("a");
+    link.href = uri;
+    link.download = `Showzy_${activeTab}_Report.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showMsg('CSV report downloaded successfully!');
+  };
+
+  const filteredBookings = bookingsList.filter(b => {
+    const searchMatch = b.customer_username.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+                        b.movie_title.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+                        b.id.toString().includes(bookingSearch);
+    const statusMatch = bookingStatusFilter === 'ALL' || b.status === bookingStatusFilter;
+    return searchMatch && statusMatch;
+  });
+
+  const renderVisualLayout = () => {
+    if (!selectedScreenId) return null;
+    const screen = screens.find(s => s.id === parseInt(selectedScreenId));
+    if (!screen) return null;
+
+    const rows = ['VIP', 'A', 'B', 'C', 'D', 'E'];
+    const cols = Array.from({ length: 8 }, (_, i) => i + 1);
+
+    return (
+      <div className="space-y-4 p-5 bg-dark-bg/60 border border-dark-border rounded-2xl">
+        <div className="text-center font-cyber font-black text-xs text-gray-500 uppercase tracking-widest border-b border-white/5 pb-2">
+          SEAT LAYOUT MAP: {screen.name.toUpperCase()}
+        </div>
+        <div className="w-3/4 mx-auto h-2 bg-gradient-to-r from-cyber-cyan/40 via-cyber-cyan to-cyber-cyan/40 rounded-full shadow-[0_0_10px_rgba(0,242,254,0.4)] text-[8px] text-center text-cyber-cyan tracking-widest uppercase font-cyber pt-3 mb-8">
+          SCREEN DIRECTION
+        </div>
+        <div className="flex flex-col gap-2.5 items-center">
+          {rows.
+
+
+
+                let colorClass = "bg-blue-500/10 border-blue-500/30 text-blue-400";
+                if (row === 'VIP') colorClass = "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
+                else if (row === 'A' || row === 'B') colorClass = "bg-purple-500/10 border-purple-500/30 text-purple-400";
+                return (
+                  <div key={col} className={`w-7 h-7 rounded-lg border text-[8px] font-bold font-cyber flex items-center justify-center cursor-default ${colorClass}`}>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#6e6e77] uppercase">Language</label>
+                    <input
+                      type="text"
+                      required
+                      value={newMovie.language}
+                      onChange={(e) => setNewMovie({ ...newMovie, language: e.target.value })}
+                      className="w-full bg-white border border-[#e4e2d5] rounded-xl py-2 px-3 text-xs outline-none text-[#1f1f1f] focus:border-[#5c5fc8] focus:ring-1 focus:ring-[#5c5fc8]"
+                      placeholder="English"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#6e6e77] uppercase">Duration (Mins)</label>
+                    <input
+                      type="number"
+                      required
+                      value={newMovie.duration}
+                      onChange={(e) => setNewMovie({ ...newMovie, duration: parseInt(e.target.value) || 120 })}
+                      className="w-full bg-white border border-[#e4e2d5] rounded-xl py-2 px-3 text-xs outline-none text-[#1f1f1f] focus:border-[#5c5fc8] focus:ring-1 focus:ring-[#5c5fc8]"
+                      placeholder="120"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[#6e6e77] uppercase">Release Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newMovie.release_date}
+                      onChange={(e) => newMovie.release_date = e.target.value}
+                      className="w-full bg-white border border-[#e4e2d5] rounded-xl py-2 px-3 text-xs outline-none text-[#1f1f1f] focus:border-[#5c5fc8] focus:ring-1 focus:ring-[#5c5fc8]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-[#6e6e77] uppercase">Poster Image URL</label>
+          {/* Quick Help Card */}
+          <div className="glass-panel" style={{ padding: '20px', background: 'rgba(13, 15, 30, 0.4)', fontSize: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'white', fontWeight: 600, marginBottom: '8px' }}>
+              <HelpCircle size={15} style={{ color: 'var(--cyber-cyan)' }} />
+              <span>Broadcast Protocol Advice</span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              Once you inject a film signal, it is immediately available to schedule showtimes. Showtimes create active booking seat grids that are fully bookable in the cinema catalogue.
+            </p>
+        )}
+      </header>
+
+      {msg.text && (
+        <div className={`border p-4 rounded-xl text-xs font-semibold mb-6 ${msg.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-green-500/10 border-green-500/30 text-green-400'}`}>
+          {msg.text}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        {/* SIDE NAVIGATION DEPENDING ON MODE */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="glass-panel rounded-2xl overflow-hidden py-2 divide-y divide-white/5">
+            {consoleMode === 'superadmin' ? (
+              // SUPER ADMIN SIDEBAR TABS
+              <>
+                <button
+                  onClick={() => setActiveTab('metrics')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'metrics' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <TrendingUp className="w-4 h-4" /> Global Metrics
+                </button>
+                <button
+                  onClick={() => setActiveTab('cinemas')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'cinemas' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Settings className="w-4 h-4" /> Cinemas Registry
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'users' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Users className="w-4 h-4" /> User Moderation
+                </button>
+                <button
+                  onClick={() => setActiveTab('movies_admin')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'movies_admin' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Video className="w-4 h-4" /> Film Catalog
+                </button>
+                <button
+                  onClick={() => setActiveTab('coupons')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'coupons' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Gift className="w-4 h-4" /> Coupons Manager
+                </button>
+                <button
+                  onClick={() => setActiveTab('broadcast')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'broadcast' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Radio className="w-4 h-4" /> Global Broadcast
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'settings' ? 'text-cyber-cyan bg-cyber-cyan/10 border-l-2 border-l-cyber-cyan' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Server className="w-4 h-4" /> System Config
+                </button>
+              </>
+            ) : (
+              // CINEMA MANAGER SIDEBAR TABS
+              <>
+                <button
+                  onClick={() => setActiveTab('cinema_metrics')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'cinema_metrics' ? 'text-cyber-magenta bg-cyber-magenta/10 border-l-2 border-l-cyber-magenta' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <TrendingUp className="w-4 h-4" /> Multiplex Stats
+                </button>
+                <button
+                  onClick={() => setActiveTab('screens')}
+                        onChange={(e) => setNewCinema({ ...n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      rows="2"
+                      value={newCinema.address}
+                      onChange={(e) => setNewCinema({ ...newCinema, address: e.target.value })}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'bookings' ? 'text-cyber-magenta bg-cyber-magenta/10 border-l-2 border-l-cyber-magenta' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Video className="w-4 h-4" /> Booking Reports
+                </button>
+                <button
+                  onClick={() => setActiveTab('validation')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'validation' ? 'text-cyber-magenta bg-cyber-magenta/10 border-l-2 border-l-cyber-magenta' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <QrCode className="w-4 h-4" /> QR Check-in
+                </button>
+                <button
+                  onClick={() => setActiveTab('alerts')}
+                  className={`w-full text-left px-5 py-3.5 text-xs font-bold font-cyber uppercase tracking-wider flex items-center gap-2.5 transition cursor-pointer ${activeTab === 'alerts' ? 'text-cyber-magenta bg-cyber-magenta/10 border-l-2 border-l-cyber-magenta' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <Bell className="w-4 h-4" /> Customer Alerts
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT 3 COLUMNS: TAB PANELS */}
+        <div className="lg:col-span-3 space-y-6">
+
+          {/* PANEL 1: METRICS PANEL */}
+          {activeTab === 'metrics' && stats && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-black font-cyber text-cyber-cyan uppercase tracking-wider">Analytics Control Dashboard</h2>
+              
+              {/* Stats Counters Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-cyber-cyan text-center">
+                  <span className="text-[10px] text-gray-500 uppercase block font-cyber">Total Shows</span>
+                  <span className="text-xl font-cyber font-black text-white mt-1 block">{stats.total_shows}</span>
+                </div>
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-cyber-magenta text-center">
+                  <span className="text-[10px] text-gray-500 uppercase block font-cyber">Total Movies</span>
+                  <span className="text-xl font-cyber font-black text-white mt-1 block">{stats.total_movies}</span>
+                </div>
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-green-500 text-center">
+                  <span className="text-[10px] text-gray-500 uppercase block font-cyber">Confirmed Bookings</span>
+                  <span className="text-xl font-cyber font-black text-white mt-1 block">{stats.total_bookings}</span>
+                </div>
+                <div className="glass-panel p-4 rounded-xl border-l-2 border-l-yellow-500 text-center">
+                </div>
+              </div>
+
+              {/* Quick revenue chart visual */}
+              <div className="glass-panel p-6 rounded-2xl">
+                <h3 className="text-sm font-black font-cyber text-white uppercase border-l-4 border-l-cyber-cyan pl-2 mb-4">REVENUE DISTRIBUTION LOG</h3>
+                <div className="h-4 bg-dark-bg/60 border border-dark-border rounded-full overflow-hidden flex">
+                  <div style={{ width: '70%' }} className="bg-cyber-cyan h-full"></div>
+                  <div style={{ width: '30%' }} className="bg-cyber-magenta h-full"></div>
+                </div>
+                <div className="flex justify-between text-[9px] font-cyber text-gray-500 mt-2 font-bold">
+                  <span>CLASSIC & PREMIUM SEATS (70%)</span>
+                  <span>RECLINER SEATS (30%)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PANEL 2: CINEMAS REGISTRY */}
+          {activeTab === 'cinemas' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-base font-black font-cyber text-white uppercase border-l-4 border-l-cyber-cyan pl-3">
+                  CINEMA MULTIPLEXES ({cinemas.length})
+                </h3>
+                <button
+                  onClick={() => setShowAddCinema(!showAddCinema)}
+                  className="cyber-btn text-[10px] font-cyber font-bold uppercase py-2 px-4 rounded-xl cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> {showAddCinema ? 'Close' : 'Add Cinema Directly'}
+                </button>
+              </div>
+
+              {showAddCinema && (
+                <form onSubmit={handleCreateCinema} className="glass-panel p-6 rounded-2xl space-y-4 border border-cyber-cyan/30">
+                  <h4 className="text-xs font-black font-cyber text-cyber-cyan uppercase">Add Multiplex to Database</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Cinema Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCinema.name}
+                        onChange={(e) => setNewCinema({ ...n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      rows="2"
+                      value={newCinema.address}
+                      onChange={(e) => setNewCinema({ ...newCinema, address: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white resize-none"
+                      placeholder="Cinema complex location address details..."
+                    />
+                  </div>
+                  <button type="submit" className="cyber-btn text-[10px] font-cyber font-bold uppercase py-2 px-4 rounded-xl">
+                    Register Cinema Multiplex
+                  </button>
+                </form>
+              )}
+
+              <div className="glass-panel p-6 rounded-2xl space-y-4">
+                <div className="space-y-3">
+                  {cinemas.map(c => (
+                    <div key={c.id} className="p-3 bg-dark-bg/60 border border-dark-border rounded-xl flex justify-between items-center">
+                      <div>
+                        <h4 className="text-xs font-bold text-white font-cyber">{c.name}</h4>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{c.address}</p>
+                      </div>
+                      <span className="text-[8px] bg-cyber-cyan/10 text-cyber-cyan font-bold font-cyber border border-cyber-cyan/20 px-2 py-0.5 rounded uppercase">
+                        {c.city_name || 'Active'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PANEL 3: USER MODERATION */}
+          {activeTab === 'users' && (
+            <div className="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 className="text-base font-black font-cyber text-white uppercase border-l-4 border-l-cyber-cyan pl-3 mb-4">
+                REGISTERED CUSTOMERS ({usersList.length})
+              </h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {usersList.length === 0 ? (
+                  <p className="text-gray-500 text-xs py-4 text-center">No regular user accounts registered.</p>
+                ) : (
+                  usersList.map(u => (
+                    <div key={u.id} className="p-3 bg-dark-bg/60 border border-dark-border rounded-xl flex justify-between items-center">
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{u.username}</h4>
+                        <p className="text-[10px] text-gray-400">{u.email}</p>
+                        <p className="text-[9px] text-cyber-cyan font-cyber font-bold mt-1">REWARD POINTS: {u.reward_points} PTS</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => viewUserHistory(u)}
+                          className="bg-dark-panel border border-white/10 hover:bg-white/5 text-gray-300 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer"
+            
+
+
+
+
+
+
+
+
+
+                        ) : (
+                          <button
+                            onClick={() => handleUserBlock(u.id, false)}
+                            className="bg-green-500/15 hover:bg-green-500/25 text-green-400 border border-green-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase cursor-pointer"
+                          >
+                            Unblock
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {selectedUser && (
+                <div className="p-4 border border-white/10 rounded-xl bg-dark-panel/40 space-y-3 mt-6">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <h4 className="text-xs font-black font-cyber text-cyber-cyan uppercase tracking-wider">
+                      Booking History: {selectedUser.username}
+                    </h4>
+                    <button onClick={() => setSelectedUser(null)} className="text-gray-500 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {userBookings.length === 0 ? (
+                    <p className="text-gray-500 text-[10px] text-center">No bookings logs registered.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {userBookings.map(b => (
+                        <div key={b.id} className="p-2 bg-dark-bg/60 border border-dark-border rounded-lg flex justify-between items-center text-[10px]">
+                          <div>
+                            <p className="font-bold text-white">{b.movie_title}</p>
+                            <p className="text-[9px] text-gray-500">{b.theatre_name} | {b.screen_name}</p>
+                            <p className="text-[9px] text-cyber-cyan">Seats: {b.seats}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-white font-cyber">₹{b.final_amount}</span>
+                            <span className="block text-[8px] text-gray-500 mt-0.5 uppercase font-cyber">{b.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PANEL 4: FILM CATALOG INJECTION */}
+          {activeTab === 'movies_admin' && (
+            <div className="space-y-6">
+              <form onSubmit={handleAddMovie} className="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 className="text-sm font-black font-cyber text-cyber-cyan tracking-wider">FILM SIGNAL CATALOG INJECTOR</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Movie Title</label>
+                    <input
+           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Language</label>
+                    <input
+                      type="text"
+                      required
+                      value={newMovie.language}
+                      onChange={(e) => setNewMovie({ ...newMovie, language: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white"
+                      placeholder="English"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Duration (Mins)</label>
+                    <input
+                      type="number"
+                      required
+                      value={newMovie.duration}
+                      onChange={(e) => setNewMovie({ ...newMovie, duration: parseInt(e.target.value) || 120 })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white"
+                      placeholder="120"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Release Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newMovie.release_date}
+                      onChange={(e) => setNewMovie({ ...newMovie, release_date: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Poster Image URL</label>
+                  <input
+                    type="url"
+                    value={newMovie.poster_url}
+                    onChange={(e) => setNewMovie({ ...newMovie, poster_url: e.target.value })}
+                    className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white"
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Synopsis Summary</label>
+                  <textarea
+                    required
+                    rows="3"
+                    value={newMovie.description}
+                    onChange={(e) => setNewMovie({ ...newMovie, description: e.target.value })}
+                    className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white resize-none"
+                    placeholder="Add movie plot summary description..."
+                  />
+                </div>
+
+                <button type="submit" className="cyber-btn px-6 py-2.5 rounded-xl text-xs font-bold font-cyber uppercase">
+                  Inject Movie Signal
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* PANEL 5: COUPONS MANAGER */}
+          {activeTab === 'coupons' && (
+            <div className="space-y-6">
+              <form onSubmit={handleCreateCoupon} className="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 className="text-sm font-black font-cyber text-cyber-cyan tracking-wider">CREATE GLOBAL COUPON</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Coupon Code</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCoupon.code}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white font-cyber"
+                      placeholder="E.g. TICKET50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Discount (INR)</label>
+                    <input
+                      type="number"
+                      required
+                      value={newCoupon.discount_amount}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, discount_amount: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan rounded-xl py-2 px-3 text-xs outline-none text-white"
+                      placeholder="50"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-cyber text-gray-400 uppercase font-bold">Expiry Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newCoupon.expiry_date}
+                      onChange={(e) => setNewCoupon({ ...newCoupon, expiry_date: e.target.value })}
+                      className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-cyan
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    <div>
+                      <span className="text-white block font-bold">SMTP Mail Server</span>
+                      <small className="text-[9px] text-gray-500">Dispatch tickets via SMTP server mailer.</small>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={sysParams.smtp_enabled}
+                      onChange={(e) => setSysParams({ ...sysParams, smtp_enabled: e.target.checked })}
+                      className="w-4 h-4 accent-cyber-cyan"
+                    />
+                  </div>
+                  <button
+                    onClick={() => showMsg('SMTP mail dispatcher synchronizing... Test email sent to admin!')}
+                    className="w-full bg-dark-panel border border-white/10 hover:bg-white/5 text-gray-300 py-2 rounded-xl text-[10px] font-cyber font-bold uppercase cursor-pointer"
+                  >
+                    Send SMTP Test Mail
+                  </button>
+                </div>
+              </div>
+
+              {/* Logs */}
+              <div className="glass-panel p-6 rounded-2xl">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-xs font-black font-cyber text-white uppercase">System Audit Log Logs</h3>
+                  <button onClick={() => showMsg('Logs refreshed!')} className="text-cyber-cyan hover:text-cyber-cyan/80 text-[10px] font-cyber font-bold uppercase transition flex items-center gap-1 cursor-pointer">
+                    <RefreshCw className="w-3.5 h-3.5" /> Refresh Logs
+                  </button>
+                </div>
+                <div className="bg-dark-bg/60 border border-dark-border rounded-xl p-3 text-[9px] font-mono text-gray-400 space-y-1 max-h-24 overflow-y-auto">
+                  <p><span className="text-cyber-cyan">[08-06-2026 19:35:10]</span> INFO: Stripe checkout processed successfully.</p>
+                  <p><span className="text-cyber-cyan">[08-06-2026 19:37:02]</span> INFO: Expired Seat lock checks applied (0 released).</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PANEL 8: MULTIPLEX STATS (CINEMA MODE) */}
+          {activeTab === 'cinema_metrics' && stats && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-black font-cyber text-cyber-magenta uppercase tracking-wider">Multiplex Cinema Analytics</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="glass-panel p-5 border-l-4 border-l-cyber-magenta flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-gray-500 uppercase block font-cyber">Active Bookings</span>
+                    <span className="text-2xl font-cyber font-black text-white mt-1 block">{stats.total_bookings}</span>
+                  </div>
+                  <LayoutDashboard className="w-8 h-8 text-cyber-magenta/20" />
+                </div>
+                <div className="glass-panel p-5 border-l-4 border-l-green-500 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-gray-500 uppercase block font-cyber">Cinema Revenue</span>
+                    <span className="text-2xl font-cyber font-black text-white mt-1 block">₹{stats.total_revenue}</span>
+                  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      checked={sysParams.smtp_enabled}
+                      onChange={(e) => setSysParams({ ...sysParams, smtp_enabled: e.target.checked })}
+                      className="w-4 h-4 accent-cyber-cyan"
+                    />
+                  </div>
+                  <button
+                    onClick={() => showMsg('SMTP mail dispatcher synchronizing... Test email sent to admin!')}
+                    className="w-full bg-dark-panel border border-white/10 hover:bg-white/5 text-gray-300 py-2 rounded-xl text-[10px] font-cyber font-bold uppercase cursor-pointer"
+                  >
+                    Send SMTP Test Mail
+                  </button>
+                </div>
+              </div>
+
+              {/* Payout Splits calculator */}
+              <div className="glass-panel p-6 rounded-2xl space-y-4">
+                <h3 className="text-xs font-black font-cyber text-white uppercase border-l-4 border-l-yellow-500 pl-2">Theatre Payout & Split Ledger</h3>
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                  {stats.theatre_performance && stats.theatre_performance.length > 0 ? (
+                    stats.theatre_performance.map((perf, idx) => (
+                      <div key={idx} className="p-3 bg-dark-bg/60 border border-dark-border rounded-xl text-[10px] flex justify-between items-center font-mono">
+                        <div>
+                          <strong className="text-white uppercase tracking-wider block font-cyber">{perf.name}</strong>
+                          <span className="text-[8px] text-gray-500">Sales: ₹{perf.sales.toFixed(2)} | Rate: {perf.commission_rate}%</span>
+                        </div>
+                        <div className="text-right space-y-0.5">
+                          <p>Commission Earned: <span className="text-green-500 font-bold">₹{perf.commission_earned.toFixed(2)}</span></p>
+                          <p>Multiplex Payout: <span className="text-cyber-cyan font-bold">₹{(perf.sales - perf.commission_earned).toFixed(2)}</span></p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    <div className="p-5 border border-dashed border-white/10 rounded-2xl text-center py-10 text-gray-500">
+                      <QrCode className="w-10 h-10 mx-auto text-gray-600 mb-2" />
+                      <p className="text-[10px] font-cyber uppercase tracking-wider">Awaiting Scan Input...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PANEL 15: CUSTOMER SHOW ALERTS */}
+          {activeTab === 'alerts' && (
+            <form onSubmit={handleSendAlert} className="glass-panel p-6 rounded-2xl space-y-4">
+              <h3 className="text-sm font-black font-cyber text-cyber-magenta tracking-wider">SHOW ALERTS BROADCASTER</h3>
+              <p className="text-[10px] text-gray-500">Sends showtime update warnings (delays, screen changes) directly to customer holders.</p>
+              
+              <div className="space-y-1">
+                <label className="text-[9px] font-cyber text-cyber-magenta font-bold uppercase">Select Scheduled Show</label>
+                <select
+                  required
+                  value={alertShowId}
+                  onChange={(e) => setAlertShowId(e.target.value)}
+                  className="w-full bg-dark-panel border border-dark-border focus:border-cyber-magenta rounded-xl py-2.5 px-3 text-xs outline-none text-gray-300 font-cyber"
+                >
+                  <option value="">Choose Show...</option>
+                  <option value="1">Dune: Part Two - Screen 1 - 10:00 AM</option>
+                  <option value="2">Interstellar - Screen 2 - 13:00 PM</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-cyber text-cyber-magenta font-bold uppercase">Alert Message</label>
+                <textarea
+                  required
+                  rows="4"
+                  value={alertMessage}
+                  onChange={(e) => setAlertMessage(e.target.value)}
+                  className="w-full bg-dark-bg/60 border border-dark-border focus:border-cyber-magenta rounded-xl py-2.5 px-3 text-xs outline-none text-white resize-none"
+                  placeholder="Type show update warning notifications..."
+                />
+              </div>
+
+              <button type="submit" className="cyber-btn cyber-btn-magenta text-xs font-bold font-cyber uppercase tracking-wider py-2.5 px-6 rounded-xl">
+                Broadcast Show Alert
+              </button>
+            </form>
+          )}
+
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              <button type="button" onClick={() => { setShowUserBookingsModal(false); setSelectedUserBookings([]); }} className="text-gray-500 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {selectedUserBookings.length === 0 ? (
+                <p className="text-gray-500 text-xs py-4 text-center">No bookings registered for this account.</p>
+              ) : (
+                selectedUserBookings.map(b => (
+                  <div key={b.id} className="p-3 bg-dark-bg/60 border border-dark-border rounded-xl flex justify-between items-center text-xs">
+                    <div>
+                      <span className="font-bold text-white block">{b.movie_title}</span>
+                      <span className="text-[9px] text-gray-500 uppercase">{b.theatre_name} &bull; {b.screen_name}</span>
+                      <span className="text-[9px] text-cyber-cyan block mt-0.5">Seats: {b.seats}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-white block">₹{b.final_amount}</span>
+                      <span className={`text-[8px] font-bold uppercase mt-0.5 block ${b.status === 'CONFIRMED' ? 'text-green-400' : 'text-red-400'}`}>{b.status}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
