@@ -15,7 +15,7 @@ export default function BookingSummary() {
   const { token, API_BASE } = useAuth();
   
   const routeState = location.state || {};
-  const isCheckoutMode = bookingId === 'checkout';
+  const isCheckoutMode = bookingId === 'checkout' || location.pathname.includes('/checkout/');
 
   // State variables for checkout configuration (Phase 1)
   const [foodItemsList, setFoodItemsList] = useState([]);
