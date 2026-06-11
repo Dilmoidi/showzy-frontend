@@ -12,6 +12,8 @@ export default function AdminScanTicket() {
   const [previousScanTime, setPreviousScanTime] = useState(null);
   const [manualMode, setManualMode] = useState(false);
   const [manualBookingId, setManualBookingId] = useState('');
+  const [cameras, setCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState('');
   
   const scannerRef = useRef(null);
 
@@ -22,17 +24,39 @@ export default function AdminScanTicket() {
         scannerRef.current = new Html5Qrcode("reader");
       }
       
-      await scannerRef.current.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess,
-        onScanFailure
-      );
-      setScannerActive(true);
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        setCameras(devices);
+        
+        let backCamera = devices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment')
+        );
+        
+        const cameraIdToUse = selectedCameraId || (backCamera ? backCamera.id : devices[0].id);
+        setSelectedCameraId(cameraIdToUse);
+        
+        await scannerRef.current.start(
+          cameraIdToUse,
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          onScanSuccess,
+          onScanFailure
+        );
+        setScannerActive(true);
+      } else {
+        await scannerRef.current.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          onScanSuccess,
+          onScanFailure
+        );
+        setScannerActive(true);
+      }
     } catch (err) {
       console.error("Error starting scanner:", err);
       setScanStatus('ERROR');
-      setErrorMessage('Could not access camera. Please grant permissions.');
+      setErrorMessage('Could not access camera. Please check camera permissions.');
     }
   };
 
@@ -44,6 +68,33 @@ export default function AdminScanTicket() {
       } catch (err) {
         console.error("Error stopping scanner", err);
       }
+    }
+  };
+
+  const handleCameraChange = async (e) => {
+    const newCameraId = e.target.value;
+    setSelectedCameraId(newCameraId);
+    if (scannerActive) {
+      await stopScanner();
+      setTimeout(async () => {
+        try {
+          if (!scannerRef.current) {
+            scannerRef.current = new Html5Qrcode("reader");
+          }
+          await scannerRef.current.start(
+            newCameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            onScanFailure
+          );
+          setScannerActive(true);
+          setScanStatus('SCANNING');
+        } catch (err) {
+          console.error("Error changing camera:", err);
+          setScanStatus('ERROR');
+          setErrorMessage('Failed to start selected camera.');
+        }
+      }, 300);
     }
   };
 
@@ -271,6 +322,23 @@ export default function AdminScanTicket() {
           id="reader" 
           className={`w-full max-w-md mx-auto rounded-3xl overflow-hidden border-4 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)] ${scanStatus === 'SCANNING' ? 'block' : 'hidden'}`}
         ></div>
+
+        {scanStatus === 'SCANNING' && cameras.length > 1 && (
+          <div className="mt-4 w-full max-w-xs text-center space-y-2">
+            <label className="block text-xs text-gray-500 uppercase tracking-wider font-semibold">Select Camera</label>
+            <select
+              value={selectedCameraId}
+              onChange={handleCameraChange}
+              className="w-full bg-gray-800 border border-gray-700 text-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-500 transition-colors"
+            >
+              {cameras.map(camera => (
+                <option key={camera.id} value={camera.id}>
+                  {camera.label || `Camera ${camera.id.slice(0, 5)}...`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {scanStatus === 'SCANNING' && (
           <button 
